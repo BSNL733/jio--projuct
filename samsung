@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Exit immediately if any command fails
+set -e
+
+echo "🚀 Starting Samsung Android DevOps Pipeline..."
+
+# 1. Check for connected Samsung/Android devices
+echo "🔍 Checking for connected devices..."
+DEVICE_COUNT=$(adb devices | grep -v "List of devices" | grep "device" | wc -l)
+
+if [ "$DEVICE_COUNT" -eq 0 ]; then
+    echo "❌ Error: No Samsung device or emulator found. Connect a device and retry."
+    exit 1
+fi
+
+echo "✅ Found $DEVICE_COUNT active device(s)."
+
+# 2. Clean and build the Android application
+echo "🏗️ Building the release APK using Gradle..."
+./gradlew clean assembleRelease
+
+# 3. Locate the generated APK file
+APK_PATH="app/build/outputs/apk/release/app-release.apk"
+
+if [ ! -f "$APK_PATH" ]; then
+    echo "❌ Error: APK generation failed. Path not found: $APK_PATH"
+    exit 1
+fi
+
+echo "📦 APK successfully built at: $APK_PATH"
+
+# 4. Deploy and install the APK to the connected device
+echo "📲 Deploying APK to the Samsung device..."
+adb install -r "$APK_PATH"
+
+echo "🎉 Deployment complete! Application is ready to test."
+
